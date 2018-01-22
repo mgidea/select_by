@@ -15,12 +15,23 @@ module SelectBy
             "Only #{SELECTING_METHODS} methods can be passed to private method: :selecting_by"
           end
         end
+
         # if a hash is provided use each hash key as a method name and value as what the method should return
         # if any of key/value pairs are not callable or do not match the reciever based on equality then reject
         # the element of the array.  if argument that is provided is a callable method (calling to_s on the object
         # returns a method the element responds to) then call that method on each element only returning the elements
         # that return a truthy value (similar to select(&:method)).
+        #
         # if you provide a code block the method will apply that code block to each returned element
+        #
+        # ["Smith", "peter"].detect_by(:size => 5) # => "Smith"
+        # ["Smith", "peter"].detect_by(:size => 5, &:downcase) # => "smith"
+        # ["Smith", "peter"].select_by(:size => 5) {|name| name.downcase} # => ["smith", "peter"]
+        # ["Smith", "peter"].reject_by(:size => 5, &:downcase) # => []
+        #
+        # when the object does not respond to the key the selecting block assumes it is falsey
+        # ["Smith", "peter"].reject_by(:peter => 5, &:downcase) # => ["smith", "peter"]
+        # ["Smith", "peter"].select_by(:peter => 5, &:downcase) # => []
 
         def select_by(hash_or_method = nil, &block)
           select_or_reject_by(:select, hash_or_method, &block)
@@ -53,7 +64,17 @@ module SelectBy
 
         alias_method :find_by, :detect_by
         alias_method :find_all_by, :select_by
+
         private
+
+        def select_or_reject_by(meth, hash_or_method, &block)
+          array = if hash_or_method.nil?
+                    self
+                  else
+                    selecting_by(meth, hash_or_method)
+                  end
+           block_given? ? array.map(&block) : array
+        end
 
         def selecting_by(meth, hash_or_method, stop_first_time = false)
           raise InvalidArgumentError unless (meth.respond_to?(:to_sym))
