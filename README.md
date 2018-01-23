@@ -1,8 +1,17 @@
 # SelectBy
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/select_by`. To experiment with that code, run `bin/console` for an interactive prompt.
+SelectBy is a ruby gem that adds some equality methods onto the Array class.
 
-TODO: Delete this and the text above, and describe your gem
+If you have ever used select in this manner:
+
+```
+["smith","pete","tom","sara"].select { |name| name.first == "s" && name.size == 5 }.map(&:upcase) # => ["SMITH"]
+```
+this can be accomplished with
+
+```
+["smith","pete","tom","sara"].select_by(:first => "s", :size => 5, &:upcase)
+```
 
 ## Installation
 
@@ -22,7 +31,21 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+By including this gem you will add :select_by (aliased as find_all_by), :reject_by, :detect_by (aliased as find_by), :partition_by methods to the Array class. if a hash is provided as the argument use each hash key as a method name and value as what the method should return if any of key/value pairs are not callable or do not match the reciever based on equality then reject the element of the array.  if the argument that is provided is a callable method (calling to_s on the object returns a method the element responds to) then call that method on each element only returning the elements that return a truthy value (similar to select(&:method)).
+
+if you provide a code block the method will apply that code block to each returned element and return the resulting array
+
+```
+["Smith", "peter"].detect_by(:size => 5) # => "Smith"
+["Smith", "peter"].detect_by(:size => 5, &:downcase) # => "smith"
+["Smith", "peter"].select_by(:size => 5) {|name| name.downcase} # => ["smith", "peter"]
+["Smith", "peter"].reject_by(:size => 5, &:downcase) # => []
+["Smith", "peter"].partition_by(:size => 5) # => [["Smith"],["peter"]]
+
+when the object does not respond to the key the selecting block assumes it is falsey
+["Smith", "peter"].reject_by(:peter => 5, &:downcase) # => ["smith", "peter"]
+["Smith", "peter"].select_by(:peter => 5, &:downcase) # => []
+```
 
 ## Development
 
